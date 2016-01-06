@@ -44,4 +44,7 @@ EXPOSE 8086
 
 VOLUME ["/var/lib/influxdb"]
 
+# override entry point of base image
+ENTRYPOINT []
+
 CMD ["/run.sh"]
