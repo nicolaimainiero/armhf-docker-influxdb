@@ -1,18 +1,29 @@
-FROM ubuntu:trusty
-MAINTAINER Paul Valla
+FROM mckee/armhf-go:1.5
+MAINTAINER Florian Barth
 
-# Install InfluxDB
-ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND noninteractive
+
 ENV INFLUXDB_VERSION 0.9.6.1
-RUN apt-get install curl -y
-RUN curl -o /tmp/influxdb_latest_amd64.deb https://s3.amazonaws.com/influxdb/influxdb_${INFLUXDB_VERSION}_amd64.deb && \
-  dpkg -i /tmp/influxdb_latest_amd64.deb && \
-  rm /tmp/influxdb_latest_amd64.deb && \
-  rm -rf /var/lib/apt/lists/*
 
-ADD types.db /usr/share/collectd/types.db
-ADD config.toml /config/config.toml
-ADD run.sh /run.sh
+RUN apt-get update \
+	&& apt-get install -y git \
+	&& apt-get clean \
+	&& rm -rf /etc/apt/lists/*
+
+# Build InfluxDB from source
+RUN mkdir -p $GOPATH/src/github.com/influxdb \
+	&& cd $GOPATH/src/github.com/influxdb \
+	&& git clone https://github.com/influxdb/influxdb \
+	&& cd influxdb \
+#	&& git checkout tags/v${INFLUXDB_VERSION} \
+	&& go get -u -f ./... \
+	&& go build ./... \
+	&& mv $GOPATH/bin/* /usr/bin \
+	&& rm -rf $GOPATH/*
+	
+COPY types.db /usr/share/collectd/types.db
+COPY config.toml /etc/influxdb/config.toml
+COPY run.sh /run.sh
 RUN chmod +x /*.sh
 
 ENV PRE_CREATE_DB **None**
