@@ -1,9 +1,9 @@
-FROM mckee/armhf-go:1.5
+FROM armhfbuild/golang:1.4.3
 MAINTAINER Florian Barth
 
 ENV DEBIAN_FRONTEND noninteractive
 
-ENV INFLUXDB_VERSION 0.9.6.1
+ENV INFLUXDB_VERSION 0.10.1
 
 RUN apt-get update \
 	&& apt-get install -y git \
@@ -11,12 +11,15 @@ RUN apt-get update \
 	&& rm -rf /etc/apt/lists/*
 
 # Build InfluxDB from source
-RUN mkdir -p $GOPATH/src/github.com/influxdb \
-	&& cd $GOPATH/src/github.com/influxdb \
-	&& git clone https://github.com/influxdb/influxdb \
+RUN mkdir -p $GOPATH/src/github.com/influxdata \
+	&& cd $GOPATH/src/github.com/influxdata \
+	&& git clone https://github.com/influxdata/influxdb \
 	&& cd influxdb \
-#	&& git checkout tags/v${INFLUXDB_VERSION} \
-	&& go get -u -f ./... \
+	&& git checkout tags/v${INFLUXDB_VERSION} \
+	# go get -u sometime fails first time, but succeeds second time
+	# (see https://github.com/golang/go/issues/9224)
+	# therefore, we try it a second time, if it failed the first time
+	&& ( go get -u -f ./... || go get -u -f ./... ) \
 	&& go build ./... \
 	&& mv $GOPATH/bin/* /usr/bin \
 	&& rm -rf $GOPATH/*
@@ -43,8 +46,5 @@ EXPOSE 8086
 #EXPOSE 8099
 
 VOLUME ["/var/lib/influxdb"]
-
-# override entry point of base image
-ENTRYPOINT []
 
 CMD ["/run.sh"]
