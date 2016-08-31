@@ -3,7 +3,7 @@ MAINTAINER Florian Barth
 
 ENV DEBIAN_FRONTEND noninteractive
 
-ENV INFLUXDB_VERSION 0.10.1
+ENV INFLUXDB_VERSION 0.11.1
 
 RUN apt-get update \
 	&& apt-get install -y git \
